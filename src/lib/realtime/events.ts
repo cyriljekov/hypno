@@ -1,15 +1,17 @@
 import { TranscriptEntry } from '@/types/realtime';
 
+type EventCallback = (...args: unknown[]) => void;
+
 export class EventManager {
-  private listeners: Map<string, Set<Function>> = new Map();
-  private session: any;
-  private transport: any;
+  private listeners: Map<string, Set<EventCallback>> = new Map();
+  private session: unknown;
+  private transport: unknown;
 
   constructor() {
     this.listeners = new Map();
   }
 
-  attachToSession(session: any, transport: any) {
+  attachToSession(session: unknown, transport: unknown) {
     this.session = session;
     this.transport = transport;
     this.setupEventListeners();
@@ -19,13 +21,13 @@ export class EventManager {
     if (!this.session) return;
 
     // Audio streaming events
-    this.session.on('audio', (event: any) => {
+    (this.session as any).on('audio', (event: any) => {
       this.emit('audio', event.data);
       this.updateVisualization(event.data);
     });
 
     // Conversation tracking
-    this.session.on('conversation.item.created', (event: any) => {
+    (this.session as any).on('conversation.item.created', (event: any) => {
       if (event.item.role === 'user' || event.item.role === 'assistant') {
         const transcript: TranscriptEntry = {
           id: event.item.id || Date.now().toString(),
@@ -38,26 +40,26 @@ export class EventManager {
     });
 
     // Session lifecycle events
-    this.session.on('session.created', () => {
+    (this.session as any).on('session.created', () => {
       this.emit('session.ready');
     });
 
-    this.session.on('session.updated', (event: any) => {
+    (this.session as any).on('session.updated', (event: unknown) => {
       this.emit('session.updated', event);
     });
 
-    this.session.on('error', (error: any) => {
+    (this.session as any).on('error', (error: unknown) => {
       console.error('Session error:', error);
       this.emit('session.error', error);
     });
 
-    this.session.on('disconnect', () => {
+    (this.session as any).on('disconnect', () => {
       this.emit('session.disconnected');
     });
 
     // Transport layer events for advanced control
     if (this.transport) {
-      this.transport.on('*', (event: any) => {
+      (this.transport as any).on('*', (event: any) => {
         // Handle all raw OpenAI Realtime API events
         switch (event.type) {
           case 'input_audio_buffer.speech_started':
@@ -98,18 +100,18 @@ export class EventManager {
     return Math.min(1, sum / (dataArray.length * 32768));
   }
 
-  on(event: string, callback: Function) {
+  on(event: string, callback: EventCallback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)?.add(callback);
   }
 
-  off(event: string, callback: Function) {
+  off(event: string, callback: EventCallback) {
     this.listeners.get(event)?.delete(callback);
   }
 
-  emit(event: string, ...args: any[]) {
+  emit(event: string, ...args: unknown[]) {
     const callbacks = this.listeners.get(event);
     if (callbacks) {
       callbacks.forEach(callback => {
@@ -129,7 +131,7 @@ export class EventManager {
   // Helper methods for common operations
   triggerResponse(instructions?: string) {
     if (this.transport) {
-      this.transport.sendEvent({
+      (this.transport as any).sendEvent({
         type: 'response.create',
         response: {
           modalities: ['audio'],
@@ -141,7 +143,7 @@ export class EventManager {
 
   cancelResponse() {
     if (this.transport) {
-      this.transport.sendEvent({
+      (this.transport as any).sendEvent({
         type: 'response.cancel',
       });
     }

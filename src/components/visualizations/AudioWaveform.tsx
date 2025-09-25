@@ -31,7 +31,7 @@ export function AudioWaveform({ audioLevel, isActive, className = '' }: AudioWav
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Update wave data with smooth transition
-      waveDataRef.current = waveDataRef.current.map((val, i) => {
+      waveDataRef.current = waveDataRef.current.map((val) => {
         const target = Math.random() * audioLevel * 50 + 10;
         return val + (target - val) * 0.1;
       });

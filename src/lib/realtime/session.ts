@@ -1,9 +1,9 @@
-import { SessionConfig, SessionState } from '@/types/realtime';
+import { SessionConfig } from '@/types/realtime';
 
 export class RealtimeSessionManager {
-  private session: any = null;
-  private transport: any = null;
-  private agent: any = null;
+  private session: unknown = null;
+  private transport: unknown = null;
+  private agent: unknown = null;
   private mediaStream: MediaStream | null = null;
   private audioElement: HTMLAudioElement | null = null;
 
@@ -26,10 +26,10 @@ export class RealtimeSessionManager {
       });
       this.mediaStream = stream;
       return stream;
-    } catch (error: any) {
-      if (error.name === 'NotAllowedError') {
+    } catch (error) {
+      if ((error as Error).name === 'NotAllowedError') {
         throw new Error('Microphone access is required for voice sessions');
-      } else if (error.name === 'NotFoundError') {
+      } else if ((error as Error).name === 'NotFoundError') {
         throw new Error('No microphone detected');
       }
       throw error;
@@ -57,7 +57,7 @@ export class RealtimeSessionManager {
     }
   }
 
-  async connect(agentInstance: any): Promise<void> {
+  async connect(agentInstance: unknown): Promise<void> {
     try {
       // Dynamic import to handle SDK availability
       const { RealtimeSession, OpenAIRealtimeWebRTC } = await import('@openai/agents-realtime');
@@ -71,7 +71,7 @@ export class RealtimeSessionManager {
       }
 
       // Create WebRTC transport
-      this.transport = new OpenAIRealtimeWebRTC({
+      this.transport = new (OpenAIRealtimeWebRTC as any)({
         mediaStream: this.mediaStream || undefined,
         audioElement: this.audioElement || undefined,
       });
@@ -92,13 +92,13 @@ export class RealtimeSessionManager {
         input_audio_format: 'pcm16',
       };
 
-      this.session = new RealtimeSession(agentInstance, {
+      this.session = new (RealtimeSession as any)(agentInstance, {
         transport: this.transport,
         ...sessionConfig,
       });
 
       // Connect with ephemeral token
-      await this.session.connect({ apiKey: token });
+      await (this.session as any).connect({ apiKey: token });
 
       this.agent = agentInstance;
     } catch (error) {
@@ -110,7 +110,7 @@ export class RealtimeSessionManager {
   async disconnect(): Promise<void> {
     try {
       if (this.transport) {
-        this.transport.close();
+        (this.transport as any).close();
       }
       if (this.mediaStream) {
         this.mediaStream.getTracks().forEach(track => track.stop());
@@ -123,7 +123,7 @@ export class RealtimeSessionManager {
     }
   }
 
-  async connectWithRetry(agentInstance: any, maxAttempts = 3): Promise<void> {
+  async connectWithRetry(agentInstance: unknown, maxAttempts = 3): Promise<void> {
     for (let i = 0; i < maxAttempts; i++) {
       try {
         await this.connect(agentInstance);
@@ -138,37 +138,37 @@ export class RealtimeSessionManager {
 
   interrupt(): void {
     if (this.transport) {
-      this.transport.interrupt(true); // true to cancel ongoing response
+      (this.transport as any).interrupt(true); // true to cancel ongoing response
     }
   }
 
   mute(muted: boolean): void {
     if (this.session) {
-      this.session.mute(muted);
+      (this.session as any).mute(muted);
     }
   }
 
   sendAudio(audioData: ArrayBuffer, options?: { commit?: boolean }): void {
     if (this.session) {
-      this.session.sendAudio(audioData, options);
+      (this.session as any).sendAudio(audioData, options);
     }
   }
 
   updateSessionConfig(config: Partial<SessionConfig>): void {
     if (this.transport) {
-      this.transport.updateSessionConfig(config);
+      (this.transport as any).updateSessionConfig(config);
     }
   }
 
-  getSession(): any {
+  getSession(): unknown {
     return this.session;
   }
 
-  getTransport(): any {
+  getTransport(): unknown {
     return this.transport;
   }
 
   isConnected(): boolean {
-    return this.session !== null && this.transport?.status === 'connected';
+    return this.session !== null && (this.transport as any)?.status === 'connected';
   }
 }

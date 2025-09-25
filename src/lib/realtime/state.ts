@@ -11,8 +11,8 @@ interface SessionStore extends SessionContext {
   setAudioLevel: (level: number) => void;
 
   // Session management
-  setSession: (session: any) => void;
-  setAgent: (agent: any) => void;
+  setSession: (session: unknown) => void;
+  setAgent: (agent: unknown) => void;
   startSession: () => void;
   endSession: () => void;
 

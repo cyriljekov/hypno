@@ -26,12 +26,12 @@ export class TranceGuideAgent {
   }
 
   // Create the agent instance when SDK is available
-  async createAgent(): Promise<any> {
+  async createAgent(): Promise<unknown> {
     try {
       // Dynamic import to handle SDK availability
       const { RealtimeAgent } = await import('@openai/agents-realtime');
 
-      return new RealtimeAgent({
+      return new (RealtimeAgent as any)({
         name: this.config.name,
         instructions: this.config.instructions,
         // No tools required for MVP

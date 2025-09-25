@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 interface EphemeralTokenResponse {
   value: string;
@@ -10,7 +10,7 @@ interface ErrorResponse {
   message: string;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Validate API key exists
     const apiKey = process.env.OPENAI_API_KEY;
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Handle OPTIONS requests for CORS preflight
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {

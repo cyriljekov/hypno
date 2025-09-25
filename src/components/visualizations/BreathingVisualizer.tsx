@@ -26,7 +26,7 @@ export function BreathingVisualizer({ isActive, className = '' }: BreathingVisua
 
       const runPhase = () => {
         const current = sequence[currentIndex];
-        setPhase(current.phase as any);
+        setPhase(current.phase as 'inhale' | 'hold' | 'exhale' | 'pause');
 
         setTimeout(() => {
           currentIndex = (currentIndex + 1) % sequence.length;
@@ -37,8 +37,8 @@ export function BreathingVisualizer({ isActive, className = '' }: BreathingVisua
       runPhase();
     };
 
-    const timer = breathingCycle();
-    return () => clearTimeout(timer as any);
+    breathingCycle();
+    // Note: breathingCycle manages its own timeouts internally
   }, [isActive]);
 
   const getScale = () => {

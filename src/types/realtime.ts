@@ -24,8 +24,8 @@ export interface TranscriptEntry {
 
 export interface SessionContext {
   state: SessionState;
-  session: any; // RealtimeSession type from SDK
-  agent: any; // RealtimeAgent type from SDK
+  session: unknown; // RealtimeSession type from SDK
+  agent: unknown; // RealtimeAgent type from SDK
   startTime: number | null;
   technique: TechniqueType | null;
   transcript: TranscriptEntry[];
@@ -62,7 +62,7 @@ export interface SessionEvents {
   'session.error': (error: Error) => void;
   'audio': (data: ArrayBuffer) => void;
   'audio.level': (level: number) => void;
-  'conversation.item.created': (item: any) => void;
+  'conversation.item.created': (item: unknown) => void;
   'speech.started': () => void;
   'speech.stopped': () => void;
   'disconnect': () => void;

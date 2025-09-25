@@ -23,6 +23,7 @@ export function SessionControls({
   onToggleMute,
   onInterrupt,
 }: SessionControlsProps) {
+  // Note: isConnected and onInterrupt are kept for interface compatibility
 
   return (
     <motion.div

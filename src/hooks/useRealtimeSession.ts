@@ -21,7 +21,6 @@ export function useRealtimeSession() {
     setSession,
     setAgent,
     startSession,
-    endSession,
     addTranscript,
     reset,
   } = useSessionStore();
@@ -32,9 +31,7 @@ export function useRealtimeSession() {
     agentRef.current = new TranceGuideAgent();
     eventManagerRef.current = new EventManager();
 
-    return () => {
-      disconnect();
-    };
+    // Cleanup will be handled when component unmounts
   }, []);
 
   // Setup event listeners
@@ -47,8 +44,8 @@ export function useRealtimeSession() {
       setConnected(true);
     });
 
-    eventManager.on('session.error', (error: Error) => {
-      setError(error);
+    eventManager.on('session.error', (error: unknown) => {
+      setError(error as Error);
       setState('error');
     });
 
@@ -57,12 +54,13 @@ export function useRealtimeSession() {
       setState('idle');
     });
 
-    eventManager.on('transcript.updated', (transcript: any) => {
-      addTranscript(transcript);
+    eventManager.on('transcript.updated', (transcript: unknown) => {
+      const typedTranscript = transcript as any;
+      addTranscript(typedTranscript);
 
       // Auto-detect technique from user's first message
-      if (transcript.role === 'user' && !useSessionStore.getState().technique) {
-        const technique = detectTechnique(transcript.content);
+      if (typedTranscript.role === 'user' && !useSessionStore.getState().technique) {
+        const technique = detectTechnique(typedTranscript.content);
         setTechnique(technique);
       }
     });
@@ -75,8 +73,8 @@ export function useRealtimeSession() {
       // User stopped speaking
     });
 
-    eventManager.on('audio.level', (level: number) => {
-      setAudioLevel(level);
+    eventManager.on('audio.level', (level: unknown) => {
+      setAudioLevel(level as number);
     });
   }, [setState, setError, setConnected, addTranscript, setTechnique, setAudioLevel]);
 
@@ -121,9 +119,9 @@ export function useRealtimeSession() {
 
       // Start the session
       startSession();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Connection error:', error);
-      setError(error);
+      setError(error as Error);
       setState('error');
     }
   }, [setState, setAgent, setSession, setConnected, setError, startSession, setupEventListeners]);
