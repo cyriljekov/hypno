@@ -1,103 +1,206 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRealtimeSession } from '@/hooks/useRealtimeSession';
+import { BreathingVisualizer } from '@/components/visualizations/BreathingVisualizer';
+import { AudioWaveform } from '@/components/visualizations/AudioWaveform';
+import { SessionControls } from '@/components/controls/SessionControls';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Brain, Sparkles, Moon, Heart, AlertCircle, Loader2 } from 'lucide-react';
+import { getSessionDuration } from '@/lib/realtime/state';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const {
+    sessionState,
+    isConnected,
+    isMuted,
+    audioLevel,
+    error,
+    startTime,
+    connect,
+    disconnect,
+    interrupt,
+    toggleMute,
+  } = useRealtimeSession();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  // Handle session state changes
+  useEffect(() => {
+    if (sessionState === 'in_session') {
+      setShowWelcome(false);
+    }
+  }, [sessionState]);
+
+  const handleStart = async () => {
+    setShowWelcome(false);
+    await connect();
+  };
+
+  const handleStop = async () => {
+    await disconnect();
+    setShowWelcome(true);
+  };
+
+  // Render error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 bg-gray-900/50 border-gray-700 backdrop-blur-sm">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <AlertCircle className="h-10 w-10 text-red-400" />
+            <h2 className="text-xl font-medium text-gray-100">Connection Error</h2>
+            <p className="text-gray-300">{error.message}</p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="bg-gray-800 hover:bg-gray-700 text-white border-gray-600"
+            >
+              Try Again
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Render welcome screen
+  if (showWelcome && sessionState === 'idle') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+        >
+          <Card className="max-w-xl w-full p-10 bg-gray-900/50 border-gray-700 backdrop-blur-sm">
+            <div className="text-center space-y-8">
+              {/* Simple Logo */}
+              <div className="flex justify-center">
+                <Brain className="h-12 w-12 text-purple-400" />
+              </div>
+
+              {/* Title */}
+              <div>
+                <h1 className="text-3xl font-light text-gray-100 mb-2">TranceGuide</h1>
+                <p className="text-sm text-gray-400">AI Hypnotherapy</p>
+              </div>
+
+              {/* Minimalist Features */}
+              <div className="flex justify-center gap-8 my-8">
+                <div className="text-center">
+                  <Heart className="h-5 w-5 text-gray-400 mx-auto mb-2" />
+                  <span className="text-xs text-gray-300">Relax</span>
+                </div>
+                <div className="text-center">
+                  <Moon className="h-5 w-5 text-gray-400 mx-auto mb-2" />
+                  <span className="text-xs text-gray-300">Sleep</span>
+                </div>
+                <div className="text-center">
+                  <Sparkles className="h-5 w-5 text-gray-400 mx-auto mb-2" />
+                  <span className="text-xs text-gray-300">Focus</span>
+                </div>
+              </div>
+
+              {/* Start Button */}
+              <Button
+                onClick={handleStart}
+                size="lg"
+                className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/50 px-8 py-3 text-sm font-light transition-all hover:shadow-lg hover:shadow-purple-500/20"
+              >
+                Begin Session
+              </Button>
+
+              {/* Instructions */}
+              <p className="text-xs text-gray-400">
+                Quiet space with headphones recommended
+              </p>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Render loading states
+  if (sessionState === 'requesting_permissions') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 bg-gray-900/50 border-gray-700 backdrop-blur-sm">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <Loader2 className="h-8 w-8 text-purple-400 animate-spin" />
+            <h2 className="text-lg font-light text-gray-100">Requesting Permissions</h2>
+            <p className="text-sm text-gray-400">Please allow microphone access</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (sessionState === 'generating_token' || sessionState === 'connecting') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-8 bg-gray-900/50 border-gray-700 backdrop-blur-sm">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <Loader2 className="h-8 w-8 text-purple-400 animate-spin" />
+            <h2 className="text-lg font-light text-gray-100">
+              {sessionState === 'generating_token' ? 'Preparing' : 'Connecting'}
+            </h2>
+            <p className="text-sm text-gray-400">Setting up session</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Render main session interface
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        className="w-full max-w-md"
+      >
+        {/* Session timer at top */}
+        {startTime && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.5 }}
+            className="text-center mb-4"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <p className="text-xs text-gray-400">{getSessionDuration(startTime)}</p>
+          </motion.div>
+        )}
+
+        {/* Single centered card */}
+        <Card className="p-8 bg-gray-900/50 border-gray-700 backdrop-blur-sm">
+          <div className="space-y-8">
+            {/* Breathing Visualizer */}
+            <div className="flex justify-center py-8">
+              <BreathingVisualizer isActive={sessionState === 'in_session'} />
+            </div>
+
+            {/* Audio Waveform */}
+            <AudioWaveform
+              audioLevel={audioLevel}
+              isActive={sessionState === 'in_session'}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+            {/* Controls */}
+            <SessionControls
+              isConnected={isConnected}
+              isMuted={isMuted}
+              isSessionActive={sessionState === 'in_session'}
+              onStart={handleStart}
+              onStop={handleStop}
+              onToggleMute={toggleMute}
+              onInterrupt={interrupt}
+            />
+          </div>
+        </Card>
+      </motion.div>
     </div>
   );
 }
